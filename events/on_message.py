@@ -54,31 +54,59 @@ units = [
     },
 ]
 
-# Define a regex pattern to capture combined feet and inches
-combined_feet_inches_pattern = re.compile(
-    r"(\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d+)\s*(inches|inch|in|''|\"|``|´´)",
-    re.IGNORECASE,
-)
+# Define regex patterns to capture combined units
+combined_patterns = {
+    "feet_inches": re.compile(
+        r"(\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d+)\s*(inches|inch|in|''|\"|``|´´)",
+        re.IGNORECASE,
+    ),
+    "stones_ounces": re.compile(
+        r"(\d+)\s*(stones|stone|st)\s*(?:and\s*)?(\d+)\s*(ounces|ounce|oz)",
+        re.IGNORECASE,
+    ),
+    "miles_yards": re.compile(
+        r"(\d+)\s*(miles|mile|mi)\s*(?:and\s*)?(\d+)\s*(yards|yard|yd)",
+        re.IGNORECASE,
+    ),
+}
 
 
-def convert_combined_feet_inches(match):
-    feet_value = int(match.group(1))
-    inches_value = int(match.group(3))
+def convert_combined_units(
+    match, unit1_factor, unit2_factor, unit2_to_unit1_factor, unit_name
+):
+    value1 = float(match.group(1))
+    value2 = float(match.group(3))
 
-    # Convert feet to meters and inches to centimeters
-    meters = feet_value * 0.3048
-    centimeters = inches_value * 2.54
+    # Convert both units to the metric system
+    metric_value1 = value1 * unit1_factor
+    metric_value2 = value2 * unit2_factor
 
-    meters = meters + (centimeters / 100)
+    # Combine the results into a single metric value
+    combined_metric_value = metric_value1 + (
+        metric_value2 / unit2_to_unit1_factor
+    )
 
-    # Combine the results into a single metric string
-    return f"{meters:.2f} m"
+    # Return the combined metric value as a string
+    return f"{combined_metric_value:.2f} {unit_name}"
 
 
 def replace_with_metric(sentence: str) -> str:
-    # First, handle combined feet and inches
-    sentence = combined_feet_inches_pattern.sub(
-        convert_combined_feet_inches, sentence
+    # Handle combined units first
+    sentence = combined_patterns["feet_inches"].sub(
+        lambda match: convert_combined_units(match, 0.3048, 2.54, 100, "m"),
+        sentence,
+    )
+    sentence = combined_patterns["stones_ounces"].sub(
+        lambda match: convert_combined_units(
+            match, 6.35029, 28.3495, 1000, "kg"
+        ),
+        sentence,
+    )
+    sentence = combined_patterns["miles_yards"].sub(
+        lambda match: convert_combined_units(
+            match, 1.60934, 0.9144, 1000, "km"
+        ),
+        sentence,
     )
 
     # Iterate over the units
@@ -97,17 +125,20 @@ def replace_with_metric(sentence: str) -> str:
             # Convert the number to metric
             if unit_name in ("fahrenheit", "f"):
                 number = round(
-                    (int(number) - 32) * unit["conversion_factor"], 2
+                    (float(number) - 32) * unit["conversion_factor"], 2
                 )
             else:
-                number = round(int(number) * unit["conversion_factor"], 2)
+                number = round(float(number) * unit["conversion_factor"], 2)
 
             # Convert unit to metric
             unit_index = unit["imperic_names"].index(unit_name)
             if unit_index >= 2:
                 unit_name = unit["metric_names"][2]
             else:
-                unit_name = unit["metric_names"][unit_index]
+                if number == 1:  # Singular
+                    unit_name = unit["metric_names"][0]
+                else:  # Plural
+                    unit_name = unit["metric_names"][1]
 
             return f"{number:.2f} {unit_name}"
 
