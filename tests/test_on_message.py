@@ -100,4 +100,60 @@ class TestReplaceWithMetric:
         result = events.on_message.replace_with_metric(sentence)
         assert result == expected
 
+    # Converts miles to kilometers correctly
+    def test_converts_miles_to_kilometers(self):
+        sentence = "The marathon is 26 miles."
+        expected = "The marathon is 41.84 kilometers."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
 
+    # Converts ounces to grams correctly
+    def test_converts_ounces_to_grams(self):
+        sentence = "The weight is 8 ounces."
+        expected = "The weight is 226.80 grams."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Converts pounds to kilograms correctly
+    def test_converts_pounds_to_kilograms(self):
+        sentence = "The package weighs 10 pounds."
+        expected = "The package weighs 4.54 kilograms."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Converts stones to kilograms correctly
+    def test_converts_stones_to_kilograms(self):
+        sentence = "The person weighs 5 stones."
+        expected = "The person weighs 31.75 kilograms."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Converts Fahrenheit to Celsius correctly
+    def test_converts_fahrenheit_to_celsius(self):
+        sentence = "The temperature is 100 degrees Fahrenheit."
+        expected = "The temperature is 37.78 degrees celsius."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Handles mixed units in a sentence
+    def test_handles_mixed_units(self):
+        sentence = (
+            "The height is 5 feet 10 inches and the weight is 150 pounds."
+        )
+        expected = "The height is 1.78 m and the weight is 68.04 kilograms."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Handles invalid units gracefully
+    def test_handles_invalid_units(self):
+        sentence = "The length is 10 parsecs."
+        expected = "The length is 10 parsecs."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected
+
+    # Handles zero values correctly
+    def test_handles_zero_values(self):
+        sentence = "The length is 0 inches."
+        expected = "The length is 0.00 centimeters."
+        result = events.on_message.replace_with_metric(sentence)
+        assert result == expected

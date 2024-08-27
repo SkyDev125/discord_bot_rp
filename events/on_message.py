@@ -8,64 +8,64 @@ units = [
         "imperic_names": ("inch", "inches", "in", '"', "''", "´´", "``"),
         "metric_names": ("centimeter", "centimeters", "cm"),
         "conversion_factor": 2.54,
-        "regex": r"(\d+)\s*(inches|inch|in|''|\"|``|´´)",
+        "regex": r"(\d*\.?\d+)\s*(inches|inch|in|''|\"|``|´´)",
     },
     {
         "imperic_names": ("foot", "feet", "ft", "'"),
         "metric_names": ("meter", "meters", "m"),
         "conversion_factor": 0.3048,
-        "regex": r"(\d+)\s*(feet|foot|ft|')(?!')",
+        "regex": r"(\d*\.?\d+)\s*(feet|foot|ft|')(?!')",
     },
     {
         "imperic_names": ("yard", "yards", "yd"),
         "metric_names": ("meter", "meters", "m"),
         "conversion_factor": 91.44,
-        "regex": r"(\d+)\s*(yards|yard|yd)",
+        "regex": r"(\d*\.?\d+)\s*(yards|yard|yd)",
     },
     {
         "imperic_names": ("mile", "miles", "mi"),
         "metric_names": ("kilometer", "kilometers", "km"),
         "conversion_factor": 1.60934,
-        "regex": r"(\d+)\s*(miles|mile|mi)",
+        "regex": r"(\d*\.?\d+)\s*(miles|mile|mi)",
     },
     {
         "imperic_names": ("ounce", "ounces", "oz"),
         "metric_names": ("gram", "grams", "g"),
         "conversion_factor": 28.3495,
-        "regex": r"(\d+)\s*(ounces|ounce|oz)",
+        "regex": r"(\d*\.?\d+)\s*(ounces|ounce|oz)",
     },
     {
         "imperic_names": ("pound", "pounds", "lb"),
         "metric_names": ("kilogram", "kilograms", "kg"),
         "conversion_factor": 0.453592,
-        "regex": r"(\d+)\s*(pounds|pound|lb)",
+        "regex": r"(\d*\.?\d+)\s*(pounds|pound|lb)",
     },
     {
         "imperic_names": ("stone", "stones", "st"),
         "metric_names": ("kilogram", "kilograms", "kg"),
         "conversion_factor": 6.35029,
-        "regex": r"(\d+)\s*(stones|stone|st)",
+        "regex": r"(\d*\.?\d+)\s*(stones|stone|st)",
     },
     {
-        "imperic_names": ("fahrenheit", "f"),
-        "metric_names": ("celsius", "celsius", "°C"),
+        "imperic_names": ("fahrenheit", "fahrenheit", "f"),
+        "metric_names": ("degree celsius", "degrees celsius", "°C"),
         "conversion_factor": 5 / 9,
-        "regex": r"(\d+)\s*(?:degrees|degree|°)\s*(fahrenheit|f)",
+        "regex": r"(\d*\.?\d+)\s*(?:degrees|degree|°)\s*(fahrenheit|f)",
     },
 ]
 
 # Define regex patterns to capture combined units
 combined_patterns = {
     "feet_inches": re.compile(
-        r"(\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d+)\s*(inches|inch|in|''|\"|``|´´)",
+        r"(\d*\.?\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d*\.?\d+)\s*(inches|inch|in|''|\"|``|´´)",
         re.IGNORECASE,
     ),
     "stones_ounces": re.compile(
-        r"(\d+)\s*(stones|stone|st)\s*(?:and\s*)?(\d+)\s*(ounces|ounce|oz)",
+        r"(\d*\.?\d+)\s*(stones|stone|st)\s*(?:and\s*)?(\d*\.?\d+)\s*(ounces|ounce|oz)",
         re.IGNORECASE,
     ),
     "miles_yards": re.compile(
-        r"(\d+)\s*(miles|mile|mi)\s*(?:and\s*)?(\d+)\s*(yards|yard|yd)",
+        r"(\d*\.?\d+)\s*(miles|mile|mi)\s*(?:and\s*)?(\d*\.?\d+)\s*(yards|yard|yd)",
         re.IGNORECASE,
     ),
 }
@@ -144,15 +144,6 @@ def replace_with_metric(sentence: str) -> str:
 
         sentence = pattern.sub(replace_match, sentence)
     return sentence
-
-
-# Example usage
-sentence = (
-    "The table is 5'5'' long and weighs 20 pounds. The height is 12 inches."
-)
-converted_sentence = replace_with_metric(sentence)
-print(converted_sentence)
-
 
 class OnMessageEvent(commands.Cog):
     def __init__(self, bot: commands.Bot):
