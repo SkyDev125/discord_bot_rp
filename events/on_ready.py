@@ -1,6 +1,6 @@
 from nextcord.ext import commands
 
-class ReadyCog(commands.Cog):
+class OnReadyEvent(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -9,4 +9,4 @@ class ReadyCog(commands.Cog):
         print(f"We have logged in as {self.bot.user}")
 
 def setup(bot: commands.Bot):
-    bot.add_cog(ReadyCog(bot))
+    bot.add_cog(OnReadyEvent(bot))
