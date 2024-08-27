@@ -2,13 +2,13 @@ import re
 import nextcord
 from nextcord.ext import commands
 
-# Define a list of dictionaries for conversion factors and regex patterns
+# Define a list of dictionaries for solo Units
 units = [
     {
-        "imperic_names": ("inch", "inches", "in", '"', "''", "´´", "``"),
+        "imperic_names": ("inch", "inches", '"', "''", "´´", "``"),
         "metric_names": ("centimeter", "centimeters", "cm"),
         "conversion_factor": 2.54,
-        "regex": r"(\d*\.?\d+)\s*(inches|inch|in|''|\"|``|´´)",
+        "regex": r"(\d*\.?\d+)\s*(inches|inch|''|\"|``|´´)",
     },
     {
         "imperic_names": ("foot", "feet", "ft", "'"),
@@ -54,21 +54,39 @@ units = [
     },
 ]
 
-# Define regex patterns to capture combined units
-combined_patterns = {
-    "feet_inches": re.compile(
-        r"(\d*\.?\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d*\.?\d+)\s*(inches|inch|in|''|\"|``|´´)",
-        re.IGNORECASE,
-    ),
-    "stones_ounces": re.compile(
-        r"(\d*\.?\d+)\s*(stones|stone|st)\s*(?:and\s*)?(\d*\.?\d+)\s*(ounces|ounce|oz)",
-        re.IGNORECASE,
-    ),
-    "miles_yards": re.compile(
-        r"(\d*\.?\d+)\s*(miles|mile|mi)\s*(?:and\s*)?(\d*\.?\d+)\s*(yards|yard|yd)",
-        re.IGNORECASE,
-    ),
-}
+# Define a list of dictionaries for combined Units
+combined_patterns = [
+    {
+        "regex": re.compile(
+            r"(\d*\.?\d+)\s*(feet|foot|ft|')\s*(?:and\s*)?(\d*\.?\d+)\s*(inches|inch|''|\"|``|´´)",
+            re.IGNORECASE,
+        ),
+        "first_unit_factor": 0.3048,
+        "second_unit_factor": 2.54,
+        "first_to_second_unit_factor": 100,
+        "unit_name": "m",
+    },
+    {
+        "regex": re.compile(
+            r"(\d*\.?\d+)\s*(stones|stone|st)\s*(?:and\s*)?(\d*\.?\d+)\s*(ounces|ounce|oz)",
+            re.IGNORECASE,
+        ),
+        "first_unit_factor": 6.35029,
+        "second_unit_factor": 28.3495,
+        "first_to_second_unit_factor": 1000,
+        "unit_name": "kg",
+    },
+    {
+        "regex": re.compile(
+            r"(\d*\.?\d+)\s*(miles|mile|mi)\s*(?:and\s*)?(\d*\.?\d+)\s*(yards|yard|yd)",
+            re.IGNORECASE,
+        ),
+        "first_unit_factor": 1.60934,
+        "second_unit_factor": 0.9144,
+        "first_to_second_unit_factor": 1000,
+        "unit_name": "km",
+    },
+]
 
 
 def convert_combined_units(
@@ -92,22 +110,17 @@ def convert_combined_units(
 
 def replace_with_metric(sentence: str) -> str:
     # Handle combined units first
-    sentence = combined_patterns["feet_inches"].sub(
-        lambda match: convert_combined_units(match, 0.3048, 2.54, 100, "m"),
-        sentence,
-    )
-    sentence = combined_patterns["stones_ounces"].sub(
-        lambda match: convert_combined_units(
-            match, 6.35029, 28.3495, 1000, "kg"
-        ),
-        sentence,
-    )
-    sentence = combined_patterns["miles_yards"].sub(
-        lambda match: convert_combined_units(
-            match, 1.60934, 0.9144, 1000, "km"
-        ),
-        sentence,
-    )
+    for combined_pattern in combined_patterns:
+        sentence = combined_pattern["regex"].sub(
+            lambda match: convert_combined_units(
+                match,
+                combined_pattern["first_unit_factor"],
+                combined_pattern["second_unit_factor"],
+                combined_pattern["first_to_second_unit_factor"],
+                combined_pattern["unit_name"],
+            ),
+            sentence,
+        )
 
     # Iterate over the units
     for unit in units:
@@ -145,6 +158,7 @@ def replace_with_metric(sentence: str) -> str:
         sentence = pattern.sub(replace_match, sentence)
     return sentence
 
+
 class OnMessageEvent(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -154,7 +168,11 @@ class OnMessageEvent(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        await message.channel.send(message.content)
+        msg = replace_with_metric(message.content)
+        if msg == message.content:
+            return
+
+        await message.channel.send("```" + msg + "```")
 
 
 def setup(bot: commands.Bot):
