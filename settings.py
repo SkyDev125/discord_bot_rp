@@ -23,3 +23,5 @@ logger.addHandler(handler)
 # Set up Intents
 intents = nextcord.Intents.default()
 intents.message_content = True
+
+print(f"Testing guild id: {TESTING_GUILD_ID}")
