@@ -7,18 +7,18 @@ units = [
         "imperic_names": ("inch", "inches", '"', "''", "´´", "``"),
         "metric_names": ("centimeter", "centimeters", "cm"),
         "conversion_factor": 2.54,
-        "regex": r"(\d*\.?\d+)\s*(inches|inch|''|\"|``|´´)",
+        "regex": r"(\d*\.?\d+)\s*(inches|inch|''|\"|``|´´)(?!('|`|´))",
     },
     {
-        "imperic_names": ("foot", "feet", "ft", "'"),
+        "imperic_names": ("foot", "feet", "ft", "'", "`", "´"),
         "metric_names": ("meter", "meters", "m"),
         "conversion_factor": 0.3048,
-        "regex": r"(\d*\.?\d+)\s*(feet|foot|ft|')(?!')",
+        "regex": r"(\d*\.?\d+)\s*(feet|foot|ft|'|`|´)(?!('|`|´))",
     },
     {
         "imperic_names": ("yard", "yards", "yd"),
         "metric_names": ("meter", "meters", "m"),
-        "conversion_factor": 91.44,
+        "conversion_factor": 0.9144,
         "regex": r"(\d*\.?\d+)\s*(yards|yard|yd)",
     },
     {
@@ -51,6 +51,7 @@ units = [
         "conversion_factor": 5 / 9,
         "regex": r"(\d*\.?\d+)\s*(?:degrees|degree|°)\s*(fahrenheit|f)",
     },
+    # TODO: Implement Galons
 ]
 
 # Define a list of dictionaries for combined Units
@@ -85,6 +86,7 @@ combined_patterns = [
         "first_to_second_unit_factor": 1000,
         "unit_name": "km",
     },
+    # TODO: Implement gallons + fluid oz's
 ]
 
 
