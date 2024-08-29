@@ -2,10 +2,106 @@ import nextcord
 from nextcord.ext import commands
 from settings import TESTING_GUILD_ID
 from tools.auto_complete import fuzzysearch
+from tools.modals import SimpleRefSheetModal
 
 # Define the options
 REF_COMMANDS = ["Create", "Edit", "View", "Delete"]
 REF_TYPE = ["Simple", "Detailed", "Custom"]
+
+REF_SHEET_EMBEDS = [
+    nextcord.Embed(
+        title="Building Reference Sheet",
+        description="Click in the buttons and submit the information! :pencil:",
+    )
+]
+
+
+class PaginationView(nextcord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.current_page = 0
+
+    # Add button for General Information modal
+    @nextcord.ui.button(
+        label="General Information",
+        style=nextcord.ButtonStyle.secondary,
+        row=0,
+    )
+    async def general_info(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        modal = SimpleRefSheetModal()
+        await interaction.response.send_modal(modal)
+
+    # Add button for Cock Information
+    @nextcord.ui.button(
+        label="Cock Information", style=nextcord.ButtonStyle.primary, row=0
+    )
+    async def cock_info(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        modal = SimpleRefSheetModal()
+        await modal.start(interaction)
+
+    # Add button for Powers/Abilities/Skills
+    @nextcord.ui.button(
+        label="========= Powers/Abilities/Skills =========",
+        style=nextcord.ButtonStyle.primary,
+        row=1,
+    )
+    async def powers_abilities_skills(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        modal = SimpleRefSheetModal()
+        await modal.start(interaction)
+
+    # Add button for Personality/Lore/Background
+    @nextcord.ui.button(
+        label="====== Personality/Lore/Background ======",
+        style=nextcord.ButtonStyle.primary,
+        row=2,
+    )
+    async def personality_lore_background(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        modal = SimpleRefSheetModal()
+        await modal.start(interaction)
+
+    # Add button for Sexual Preferences
+    @nextcord.ui.button(
+        label="========== Sexual Preferences ===========",
+        style=nextcord.ButtonStyle.primary,
+        row=3,
+    )
+    async def sexual_pref(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        modal = SimpleRefSheetModal()
+        await modal.start(interaction)
+
+    @nextcord.ui.button(
+        label="==== Previous ====", style=nextcord.ButtonStyle.primary, row=4
+    )
+    async def previous_page(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        if self.current_page > 0:
+            self.current_page -= 1
+            await interaction.response.edit_message(
+                embed=REF_SHEET_EMBEDS[self.current_page], view=self
+            )
+
+    @nextcord.ui.button(
+        label="====== Next ======", style=nextcord.ButtonStyle.primary, row=4
+    )
+    async def next_page(
+        self, button: nextcord.ui.Button, interaction: nextcord.Interaction
+    ):
+        if self.current_page < len(REF_SHEET_EMBEDS) - 1:
+            self.current_page += 1
+            await interaction.response.edit_message(
+                embed=REF_SHEET_EMBEDS[self.current_page], view=self
+            )
 
 
 class RefSheetCommand(commands.Cog):
@@ -44,10 +140,17 @@ class RefSheetCommand(commands.Cog):
 
         match ref_type:
             case "Simple":
+                # Create the embeds for different pages
+
+                # Send the first embed with the paginator view
+                view = PaginationView()
                 await interaction.response.send_message(
-                    f"Creating a new {ref_type} ref sheet for {user_id}!",
-                    ephemeral=True,
+                    view=view, embed=REF_SHEET_EMBEDS[0], ephemeral=True
                 )
+                # await interaction.followup.send(
+                #     "This is a follow-up message.", ephemeral=True
+                # )
+
             case "Detailed":
                 await interaction.response.send_message(
                     f"Creating a new detailed  {ref_type} ref sheet for {user_id}!",
