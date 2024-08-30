@@ -2,7 +2,8 @@ import nextcord
 from nextcord.ext import commands
 from settings import TESTING_GUILD_ID
 from tools.auto_complete import fuzzysearch
-from tools.pages import REF_SHEET_EMBEDS, PaginationView
+from tools.pages import SimpleRefView
+from tools.embeds import REF_SHEET_EMBEDS
 
 # Define the options
 REF_COMMANDS = ["Create", "Edit", "View", "Delete"]
@@ -48,7 +49,7 @@ class RefSheetCommand(commands.Cog):
                 # Create the embeds for different pages
 
                 # Send the first embed with the paginator view
-                view = PaginationView()
+                view = SimpleRefView()
                 await interaction.response.send_message(
                     view=view, embed=REF_SHEET_EMBEDS["Simple"], ephemeral=True
                 )

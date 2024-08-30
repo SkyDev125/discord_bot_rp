@@ -1,34 +1,29 @@
 import nextcord
 from tools.modals import SimpleRefSheetModal
 
-REF_SHEET_EMBEDS = {
-    "Simple": nextcord.Embed(
-        title="Building Reference Sheet",
-        description=(
-            "Click the buttons and submit the information for your new ref! :pencil:\n\n"
-            "**Button Colours:**\n"
-            "- Blue -> Not Opened\n"
-            "- Grey -> Opened but not submitted.\n"
-            "- Green -> Successfully submitted\n"
-            "- Red -> Failed to submit"
-        ),
-    )
-}
 
-
-class PaginationView(nextcord.ui.View):
+class SimpleRefView(nextcord.ui.View):
     def __init__(self):
         super().__init__()
         self.current_page = 0
+        self.button_names = [
+            "general_info",
+            "cock_info",
+            "powers_abilities_skills",
+            "personality_lore_background",
+            "sexual_pref",
+        ]
         self.button_states = {
-            "general_info": nextcord.ButtonStyle.primary,
-            "cock_info": nextcord.ButtonStyle.primary,
-            "powers_abilities_skills": nextcord.ButtonStyle.primary,
-            "personality_lore_background": nextcord.ButtonStyle.primary,
-            "sexual_pref": nextcord.ButtonStyle.primary,
+            name: nextcord.ButtonStyle.primary for name in self.button_names
         }
+        self.button_disabled = {name: False for name in self.button_names}
+        self.default_values = {name: {} for name in self.button_names}
 
-
+    def update_button_styles(self):
+        for name in self.button_names:
+            button = getattr(self, name)
+            button.style = self.button_states[name]
+            button.disabled = self.button_disabled[name]
 
     # Add button for General Information modal
     @nextcord.ui.button(
@@ -39,8 +34,15 @@ class PaginationView(nextcord.ui.View):
     async def general_info(
         self, button: nextcord.ui.Button, interaction: nextcord.Interaction
     ):
-        modal = SimpleRefSheetModal()
+        self.button_states["general_info"] = nextcord.ButtonStyle.secondary
+        self.update_button_styles()
+        modal = SimpleRefSheetModal(
+            self, "general_info", self.default_values["general_info"]
+        )
         await interaction.response.send_modal(modal)
+        await interaction.followup.edit_message(
+            message_id=interaction.message.id, view=self
+        )
 
     # Add button for Cock Information
     @nextcord.ui.button(

@@ -1,21 +1,27 @@
+from copy import deepcopy
 import nextcord
 
+from tools.embeds import REF_SHEET_EMBEDS
 
 class SimpleRefSheetModal(nextcord.ui.Modal):
-    def __init__(self):
+    def __init__(self, view, button_name, default_values=None):
         super().__init__(title="Reference Sheet")
-
+        self.view = view
+        self.button_name = button_name
+        self.default_values = default_values or {}
         """
         -----------------------------------------------------------------------
         General Information
         -----------------------------------------------------------------------
         """
 
-        # Adding fields to the modal
+        # Adding fields to the modal with default values
         self.name = nextcord.ui.TextInput(
             label="Name",
             placeholder="Enter your character's name",
             required=True,
+            max_length=40,
+            default_value=self.default_values.get("name", ""),
         )
         self.add_item(self.name)
 
@@ -23,6 +29,7 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
             label="Age",
             placeholder="Enter your character's age",
             required=True,
+            default_value=self.default_values.get("age", ""),
         )
         self.add_item(self.age)
 
@@ -30,6 +37,7 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
             label="Height",
             placeholder="Enter your character's height",
             required=True,
+            default_value=self.default_values.get("height", ""),
         )
         self.add_item(self.height)
 
@@ -37,6 +45,7 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
             label="Weight",
             placeholder="Enter your character's weight",
             required=True,
+            default_value=self.default_values.get("weight", ""),
         )
         self.add_item(self.weight)
 
@@ -44,8 +53,30 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
             label="Species",
             placeholder="Enter your character's species",
             required=True,
+            default_value=self.default_values.get("species", ""),
         )
         self.add_item(self.species)
+
+    """
+    -----------------------------------------------------------------------
+    Validation Functions
+    -----------------------------------------------------------------------
+    """
+
+    def validate_age(self, age: str) -> str:
+        if not age.isdigit() or int(age) < 0:
+            return "Age must be a positive number."
+        return None
+
+    def validate_height(self, height: str) -> str:
+        if not height.isdigit() or int(height) < 0:
+            return "height must be a positive number."
+        return None
+
+    def validate_weight(self, weight: str) -> str:
+        if not weight.isdigit() or int(weight) < 0:
+            return "weight must be a positive number."
+        return None
 
         # self.build_type = nextcord.ui.Select(
         #     options=[
@@ -173,11 +204,14 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
 
     async def callback(self, interaction: nextcord.Interaction):
         # Process the input data here
-        name = self.name.value
-        age = self.age.value
-        height = self.height.value
-        weight = self.weight.value
-        species = self.species.value
+        print(self.default_values)
+        self.default_values = {
+            "name": self.name.value,
+            "age": self.age.value,
+            "height": self.height.value,
+            "weight": self.weight.value,
+            "species": self.species.value,
+        }
         # build_type = self.build_type.value
         # cock_height = self.cock_height.value
         # ball_size = self.ball_size.value
@@ -191,13 +225,97 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
         # favorite_kinks = self.favorite_kinks.value
         # limits = self.limits.value
 
-        # Respond to the user
+        """
+        -----------------------------------------------------------------------
+        Validation Handling
+        -----------------------------------------------------------------------
+        """
+
+        errors = {}
+
+        # Dictionary of validation functions
+        validation_functions = {
+            "age": self.validate_age,
+            "height": self.validate_height,
+            "weight": self.validate_weight,
+        }
+
+        # Perform validations and collect errors
+        for field, validate_function in validation_functions.items():
+            value = getattr(self, field).value
+            error = validate_function(value)
+            if error:
+                errors[field] = error
+
+        if errors:
+            # Update the button style to red, marking the input as invalid
+            self.view.button_states[self.button_name] = (
+                nextcord.ButtonStyle.danger
+            )
+            self.view.update_button_styles()
+
+            # Remove the invalid fields from the default values
+            for key in errors.keys():
+                self.default_values.pop(key)
+
+            # Update the error embed with the errors
+            error_embed = deepcopy(REF_SHEET_EMBEDS["Errors"])
+            error_embed.description += "\n\n" + "\n".join(errors.values())
+            existing_embeds = interaction.message.embeds
+            error_embed_exists = False
+
+            for embed in existing_embeds:
+                if embed.title == error_embed.title:
+                    embed.description = error_embed.description
+                    error_embed_exists = True
+                    break
+
+            if not error_embed_exists:
+                existing_embeds.append(error_embed)
+            print(self.default_values)
+
+            # Send an ephemeral message to the user with the errors
+            await interaction.response.send_message(
+                "There were errors with your input, check above for more information.",
+                ephemeral=True,
+                delete_after=5,
+            )
+            await interaction.followup.edit_message(
+                message_id=interaction.message.id,
+                view=self.view,
+                embeds=existing_embeds,
+            )
+            return
+
+        """
+        -----------------------------------------------------------------------
+        Input Handling
+        -----------------------------------------------------------------------
+        """
+
+        # Update the button style to success and disable it
+        self.view.button_states[self.button_name] = (
+            nextcord.ButtonStyle.success
+        )
+        self.view.button_disabled[self.button_name] = True
+        self.view.update_button_styles()
+
+        # Remove the error embed if it exists
+        existing_embeds = interaction.message.embeds
+        error_embed_title = REF_SHEET_EMBEDS["Errors"].title
+        existing_embeds = [
+            embed
+            for embed in existing_embeds
+            if embed.title != error_embed_title
+        ]
+
+        # Respond with the input data
         await interaction.response.send_message(
-            f"Name: {name}\n"
-            f"Age: {age}\n"
-            f"Height: {height}\n"
-            f"Weight: {weight}\n"
-            f"Species: {species}\n"
+            f"Name: {self.default_values["name"]}\n"
+            f"Age: {self.default_values["age"]}\n"
+            f"Height: {self.default_values["height"]}\n"
+            f"Weight: {self.default_values["weight"]}\n"
+            f"Species: {self.default_values["species"]}"
             # f"Build Type: {build_type}\n"
             # f"Cock Height: {cock_height}\n"
             # f"Ball Size: {ball_size}\n"
@@ -210,4 +328,11 @@ class SimpleRefSheetModal(nextcord.ui.Modal):
             # f"Sexual Orientation: {sexual_orientation}\n"
             # f"Favorite Kinks: {favorite_kinks}\n"
             # f"Limits: {limits}"
+            ,
+            ephemeral=True,
+        )
+        await interaction.followup.edit_message(
+            message_id=interaction.message.id,
+            view=self.view,
+            embeds=existing_embeds,
         )
